@@ -21,6 +21,9 @@ let gridGameTemplate = (()=>{
 			font-size: 2rem;
 
 			--cell-size: 2em;
+			--cell-background-rgb: 255,255,255;
+			--cell-background-alpha: 1.0;
+			--fade-color: white;
 		}
 		table {
 			margin: auto;
@@ -28,6 +31,32 @@ let gridGameTemplate = (()=>{
 			user-select: none;
 			border-collapse: collapse;
 		}
+
+		@keyframes flicker {
+			0%   { opacity: 0.5; background-color: white; }
+			100% { opacity: 1.0; background-color: black;}
+		}
+		
+		td                { --fadex: 1.10; }
+		td:nth-child(2n)  { --fadex: 0.95; }
+		td:nth-child(3n)  { --fadex: 1.06; }
+		td:nth-child(4)   { --fadex: 0.82; }
+		td:nth-child(5n)  { --fadex: 0.90; }
+		td:nth-child(7n)  { --fadex: 1.14; }
+
+		tr               { --fadey:  1.15; }
+		tr:nth-child(2n) { --fadey:  0.95; }
+		tr:nth-child(3n) { --fadey:  1.06; }
+		tr:nth-child(4)  { --fadey:  1.00; }
+		tr:nth-child(5n) { --fadey:  1.20; }
+		tr:nth-child(7n) { --fadey:  1.03; }
+
+		:host(.loading) td {
+			/* loading animation */
+			animation: flicker calc(1.0s*var(--fadex)*var(--fadey)) ease alternate infinite;
+			animation-delay: calc(-1s * (var(--fadex) + var(--fadey)));
+		}
+
 		td {
 			position: relative;
 			box-sizing: border-box;
@@ -36,6 +65,8 @@ let gridGameTemplate = (()=>{
 			text-align: center;
 			vertical-align: middle;
 			border: 1px solid #aaa;
+
+			background-color: rgba(var(--cell-background-rgb), var(--cell-background-alpha));
 
 			/* Fix Firefox Render Issue (https://stackoverflow.com/a/16337203) */
 			background-clip: padding-box;
