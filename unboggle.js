@@ -1,11 +1,20 @@
 let unboggle = null;
 let unboggleInput = null;
 let unboggleButton = null;
+
+// worker
 let worker = null;
+let workerIsWorking = false;
 
 window.addEventListener("load", function(){
 	unboggle = document.getElementById("unboggle-board");
+
+	// unboggle button
 	unboggleButton = document.getElementById("unboggle-button");
+	unboggleButton.addEventListener("click", function(evt){
+		if(workerIsWorking){ stopUnboggler(); }
+		else               { runUnboggler();  }
+	});
 
 	// restrict input
 	unboggleInput = document.getElementById("unboggle-input");
@@ -14,12 +23,16 @@ window.addEventListener("load", function(){
 		unboggleInput.value = text.replace(/[^a-zA-Z\n\r]/g, "");
 		unboggleInput.value = text.replace(/[^a-zA-Z\n\r]/g, "");
 	});
+});
 
-	// initialize worker
+function createWorker(){
+	console.log("unboggle :: creating worker");
+
 	worker = new Worker("/static/boggle/unboggle.worker.js");
 	worker.onmessage = function(evt){
 		// loading animation
 		stopLoadAnimation();
+		workerIsWorking = false;
 
 		// handle no solution
 		if(evt.data == null){
@@ -30,7 +43,7 @@ window.addEventListener("load", function(){
 		// populate board with solution
 		unboggle.fillBoard(evt.data);
 	}
-});
+}
 
 function startLoadAnimation(){
 	unboggle.classList.add("loading");
@@ -44,7 +57,22 @@ function stopLoadAnimation(){
 	unboggleButton.innerText = "UNSOLVE?";
 }
 
+function stopUnboggler(){
+	console.log("unboggle :: stop");
+	stopLoadAnimation();
+	worker.terminate();
+	console.log(worker);
+	workerIsWorking = false;
+}
+
 function runUnboggler(){
+	console.log("unboggle :: start");
+
+	// if worker already working, restart
+	if(workerIsWorking){ stopUnboggler(); }
+	// ensure worker exists
+	if(worker == null){ createWorker(); }
+
 	// validate dimensions
 	let numRows = boggle.numRows;
 	let numCols = boggle.numCols; 
@@ -66,13 +94,13 @@ function runUnboggler(){
 	unboggleInput.value = validWords.join("\n");
 
 	// run unboggler as web worker
-	if(worker == null){ return; }
-	
 	worker.postMessage({
 		numRows: numRows,
 		numCols: numCols,
 		words: validWords
 	});
+
+	workerIsWorking = true;
 
 	// loading animation
 	startLoadAnimation();
